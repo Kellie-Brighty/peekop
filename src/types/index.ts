@@ -10,10 +10,9 @@ export interface User {
   phone: string;
   verified: boolean;
   points: number;
-  tier: "Bronze" | "Silver" | "Gold";
+  tier: string;
   favorites?: number[];
-  achievements?: string[];
-  completedRides?: number;
+  completedRides: number;
 }
 
 export interface Rider {
@@ -27,6 +26,10 @@ export interface Rider {
   location: Location;
   isOnline: boolean;
   completedRides: number;
+  specialization?: string;
+  biography?: string;
+  languages?: string[];
+  joinedDate?: string;
 }
 
 export interface Achievement {

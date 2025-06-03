@@ -6,21 +6,51 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import OTPVerification from "./pages/auth/OTPVerification";
 import Dashboard from "./pages/dashboard/Dashboard";
+import RiderDashboard from "./pages/rider/RiderDashboard";
 import LandingPage from "./pages/LandingPage";
-// import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import "./styles/globals.css"; // Import global styles
 
+// Scroll to top component
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 // Protected Route Wrapper
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // TODO: Replace with actual auth check
+const ProtectedRoute = ({
+  children,
+  requiredAccountType,
+}: {
+  children: React.ReactNode;
+  requiredAccountType?: "user" | "rider";
+}) => {
+  // Check if authenticated
   const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
   const location = useLocation();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If account type is specified, check if it matches
+  if (requiredAccountType) {
+    const accountType = localStorage.getItem("accountType");
+    if (accountType !== requiredAccountType) {
+      // Redirect to appropriate dashboard
+      const redirectTo =
+        accountType === "rider" ? "/rider-dashboard" : "/dashboard";
+      return <Navigate to={redirectTo} replace />;
+    }
   }
 
   return <>{children}</>;
@@ -30,7 +60,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/dashboard";
+  const accountType = localStorage.getItem("accountType");
+  const from =
+    location.state?.from?.pathname ||
+    (accountType === "rider" ? "/rider-dashboard" : "/dashboard");
 
   if (isAuthenticated) {
     return <Navigate to={from} replace />;
@@ -42,12 +75,21 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   return (
     <Router>
+      <ScrollToTop />
       <AnimatePresence mode="wait">
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
 
           {/* Auth Routes */}
+          <Route
+            path="/login"
+            element={
+              <AuthRoute>
+                <SignIn />
+              </AuthRoute>
+            }
+          />
           <Route
             path="/signup"
             element={
@@ -65,12 +107,22 @@ const App = () => {
             }
           />
 
-          {/* Protected Routes */}
+          {/* Protected User Routes */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredAccountType="user">
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Rider Routes */}
+          <Route
+            path="/rider-dashboard"
+            element={
+              <ProtectedRoute requiredAccountType="rider">
+                <RiderDashboard />
               </ProtectedRoute>
             }
           />

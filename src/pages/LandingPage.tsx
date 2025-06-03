@@ -12,8 +12,9 @@ import {
   FiMapPin as FiLocation,
   FiClock as FiTime,
   FiPhone,
+  FiSmartphone,
 } from "react-icons/fi";
-import { RiMotorbikeFill } from "react-icons/ri";
+import { RiMotorbikeFill, RiPlayFill, RiAppleFill } from "react-icons/ri";
 import Navbar from "../components/layout/Navbar";
 import { useState, useEffect } from "react";
 
@@ -21,6 +22,7 @@ const LandingPage = () => {
   const [activeScenario, setActiveScenario] = useState(0);
   const [_isScrolled, setIsScrolled] = useState(false);
   const [activeLocation, setActiveLocation] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const locations = ["Akure", "Ondo Town", "Owo", "Ikare", "Ore"];
 
@@ -37,6 +39,23 @@ const LandingPage = () => {
       setActiveLocation((prev) => (prev + 1) % locations.length);
     }, 3000); // Increased interval for smoother transitions
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      // Simple check for desktop - based on screen width
+      const isDesktopDevice = window.innerWidth >= 1024;
+      setIsDesktop(isDesktopDevice);
+    };
+
+    // Check on mount
+    checkDevice();
+
+    // Check on resize
+    window.addEventListener("resize", checkDevice);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
   const scenarios = [
@@ -65,6 +84,47 @@ const LandingPage = () => {
       stats: "5,000+ moments made special",
     },
   ];
+
+  // Render App Store buttons for desktop
+  const renderAppStoreButtons = () => (
+    <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
+      <a
+        href="#"
+        className="bg-black text-white rounded-xl px-8 py-4 flex items-center justify-center gap-2 w-full sm:w-auto hover:bg-gray-800 transition-colors"
+      >
+        <RiAppleFill className="w-6 h-6" />
+        <div className="text-left">
+          <div className="text-xs">Download on the</div>
+          <div className="text-lg font-semibold">App Store</div>
+        </div>
+      </a>
+
+      <a
+        href="#"
+        className="bg-black text-white rounded-xl px-8 py-4 flex items-center justify-center gap-2 w-full sm:w-auto hover:bg-gray-800 transition-colors"
+      >
+        <RiPlayFill className="w-6 h-6" />
+        <div className="text-left">
+          <div className="text-xs">Get it on</div>
+          <div className="text-lg font-semibold">Google Play</div>
+        </div>
+      </a>
+    </div>
+  );
+
+  // Render access on mobile message
+  const renderMobileAccessMessage = () => (
+    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 max-w-md mx-auto mb-12">
+      <div className="flex items-center text-blue-700 mb-2">
+        <FiSmartphone className="w-5 h-5 mr-2" />
+        <span className="font-medium">Access on Mobile</span>
+      </div>
+      <p className="text-blue-600 text-sm">
+        Peekop is optimized for mobile devices. You can also access your account
+        by visiting this website from your mobile browser.
+      </p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen font-georama w-screen">
@@ -115,19 +175,27 @@ const LandingPage = () => {
               From Alagbaka to Oja Oba, FUTA to Shasha Market - we go deliver
               your package sharp sharp! No stress, just relax.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slideUp delay-200">
-              <Link to="/signup" className="btn-primary min-w-[200px] group">
-                Start Now
-                <FiArrowRight className="inline ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                to="/become-rider"
-                className="btn-outline min-w-[200px] group"
-              >
-                Become A Rider
-                <FiArrowRight className="inline ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
+
+            {isDesktop ? (
+              <>
+                {renderAppStoreButtons()}
+                {renderMobileAccessMessage()}
+              </>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slideUp delay-200">
+                <Link to="/signup" className="btn-primary min-w-[200px] group">
+                  Start Now
+                  <FiArrowRight className="inline ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  to="/become-rider"
+                  className="btn-outline min-w-[200px] group"
+                >
+                  Become A Rider
+                  <FiArrowRight className="inline ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Features Grid */}
@@ -288,13 +356,22 @@ const LandingPage = () => {
             Join thousands of satisfied customers who rely on Peekop for their
             daily delivery needs. Start your journey today!
           </p>
-          <Link
-            to="/signup"
-            className="btn-primary inline-flex items-center group animate-fadeIn delay-200"
-          >
-            Start Your Free Account
-            <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-          </Link>
+
+          {isDesktop ? (
+            <>
+              {renderAppStoreButtons()}
+              {renderMobileAccessMessage()}
+            </>
+          ) : (
+            <Link
+              to="/signup"
+              className="btn-primary inline-flex items-center group animate-fadeIn delay-200"
+            >
+              Start Your Free Account
+              <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          )}
+
           <div className="mt-12 flex flex-wrap justify-center gap-8 animate-fadeIn delay-300">
             <TestimonialBadge
               name="Sarah O."

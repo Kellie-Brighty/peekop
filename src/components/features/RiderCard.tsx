@@ -1,90 +1,134 @@
-import { motion } from "framer-motion";
-import { FiStar, FiHeart } from "react-icons/fi";
-import { RiMotorbikeFill, RiTruckFill } from "react-icons/ri";
+import { FiStar, FiClock, FiHeart } from "react-icons/fi";
+import { RiMotorbikeFill } from "react-icons/ri";
 import { Rider } from "../../types";
 
 interface RiderCardProps {
   rider: Rider;
-  isSelected: boolean;
-  isFavorite: boolean;
+  isSelected?: boolean;
+  isFavorite?: boolean;
   onSelect: (rider: Rider) => void;
   onToggleFavorite: (riderId: number) => void;
 }
 
 const RiderCard = ({
   rider,
-  isSelected,
-  isFavorite,
+  isSelected = false,
+  isFavorite = false,
   onSelect,
   onToggleFavorite,
 }: RiderCardProps) => {
+  const renderRating = () => {
+    const fullStars = Math.floor(rider.rating);
+    const hasHalfStar = rider.rating % 1 >= 0.5;
+
+    return (
+      <div className="flex items-center">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="text-yellow-400">
+            {i < fullStars ? (
+              <FiStar className="w-3 h-3 fill-current" />
+            ) : i === fullStars && hasHalfStar ? (
+              <div className="relative">
+                <FiStar className="w-3 h-3" />
+                <div className="absolute inset-0 overflow-hidden w-1/2">
+                  <FiStar className="w-3 h-3 fill-current" />
+                </div>
+              </div>
+            ) : (
+              <FiStar className="w-3 h-3" />
+            )}
+          </div>
+        ))}
+        <span className="text-xs text-gray-500 ml-1">
+          {rider.rating.toFixed(1)}
+        </span>
+      </div>
+    );
+  };
+
+  const getStatusColor = () => {
+    return rider.isOnline ? "bg-green-500" : "bg-gray-400";
+  };
+
+  // Calculate estimated fare
+  const estimatedFare = () => {
+    const baseFare = 500; // Base fare in Naira
+    const distanceMultiplier = parseFloat(rider.distance) * 100;
+    const timeMultiplier = rider.eta * 20;
+
+    return (baseFare + distanceMultiplier + timeMultiplier).toFixed(0);
+  };
+
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className={`p-3 sm:p-4 mb-2 sm:mb-3 rounded-lg sm:rounded-xl border ${
-        isSelected ? "border-primary bg-primary/5" : "border-gray-100"
+    <div
+      className={`relative mb-2 p-3 sm:p-4 rounded-xl cursor-pointer transition-colors ${
+        isSelected
+          ? "bg-primary/10 border border-primary/30"
+          : "bg-white border border-gray-100 hover:bg-gray-50"
       }`}
       onClick={() => onSelect(rider)}
     >
-      <div className="flex items-center space-x-2 sm:space-x-3">
+      <div className="absolute top-2 right-2">
         <div className="relative">
-          <img
-            src={rider.photo}
-            alt={rider.name}
-            className="w-10 h-10 sm:w-14 sm:h-14 rounded-full object-cover"
-          />
-          <div
-            className={`absolute bottom-0 right-0 w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
-              rider.isOnline ? "bg-green-500" : "bg-gray-400"
-            } border-2 border-white`}
-          ></div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-secondary text-sm sm:text-base truncate pr-2">
-              {rider.name}
-            </h4>
+          <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
+          <div className="absolute -top-1 -right-1">
             <button
-              className="text-gray-400 hover:text-red-500 flex-shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleFavorite(rider.id);
               }}
+              className={`p-1.5 rounded-full ${
+                isFavorite ? "bg-red-500 text-white" : "bg-white text-gray-400"
+              } shadow-sm`}
             >
-              <FiHeart
-                className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                  isFavorite ? "fill-red-500 text-red-500" : ""
-                }`}
-              />
+              <FiHeart className="w-3 h-3" />
             </button>
-          </div>
-          <div className="flex items-center text-xs sm:text-sm text-gray-medium flex-wrap">
-            <div className="flex items-center mr-2 sm:mr-3">
-              <FiStar className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 mr-0.5 sm:mr-1" />
-              <span>{rider.rating.toFixed(1)}</span>
-            </div>
-            {rider.vehicleType === "bike" ? (
-              <RiMotorbikeFill className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" />
-            ) : (
-              <RiTruckFill className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" />
-            )}
-            <span className="capitalize mr-2 sm:mr-3">{rider.vehicleType}</span>
-            <span className="hidden sm:inline">
-              {rider.completedRides} rides
-            </span>
-          </div>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <div className="font-medium text-primary text-sm sm:text-base">
-            {rider.eta} min
-          </div>
-          <div className="text-xs sm:text-sm text-gray-medium">
-            {rider.distance}
           </div>
         </div>
       </div>
-    </motion.div>
+
+      <div className="flex items-center">
+        <img
+          src={rider.photo}
+          alt={rider.name}
+          className="w-14 h-14 rounded-lg object-cover mr-3"
+        />
+        <div>
+          <h3 className="font-medium text-secondary">{rider.name}</h3>
+          <div className="flex items-center text-xs text-gray-medium mt-1">
+            {renderRating()}
+            <span className="mx-1">•</span>
+            <span>{rider.completedRides} rides</span>
+          </div>
+          <div className="flex items-center text-xs mt-1">
+            <RiMotorbikeFill
+              className={`w-3 h-3 mr-1 ${
+                rider.vehicleType === "bike"
+                  ? "text-green-600"
+                  : "text-amber-600"
+              }`}
+            />
+            <span className="capitalize mr-2">{rider.vehicleType}</span>
+            <span className="mr-1">•</span>
+            <span className="text-primary">₦{estimatedFare()}</span>
+            <span className="mx-1">•</span>
+            <FiClock className="w-3 h-3 mr-1" />
+            <span>{rider.eta} min</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={() => onSelect(rider)}
+        className={`mt-2 w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
+          isSelected
+            ? "bg-primary text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`}
+      >
+        {isSelected ? "Selected" : "Select"}
+      </button>
+    </div>
   );
 };
 
