@@ -67,7 +67,7 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen font-georama">
+    <div className="min-h-screen font-georama w-screen">
       <Navbar />
 
       {/* Hero Section */}
@@ -77,7 +77,7 @@ const LandingPage = () => {
           <div className="absolute inset-0 bg-[radial-gradient(#2563EB_1px,transparent_1px)] [background-size:16px_16px]" />
         </div>
 
-        <div className="container mx-auto relative">
+        <div className="max-w-7xl mx-auto px-4">
           {/* Interactive Location Banner */}
           <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-12">
             <div className="relative group min-w-[160px]">
@@ -101,7 +101,6 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Main Hero Content */}
           <div className="text-center max-w-4xl mx-auto mb-16">
             <div className="inline-block animate-bounce mb-4">
               <RiMotorbikeFill className="text-primary w-16 h-16" />
@@ -131,8 +130,8 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Interactive Feature Cards */}
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+          {/* Features Grid */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-7xl mx-auto">
             <div
               className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer animate-slideUp"
               style={{ animationDelay: "300ms" }}
@@ -193,8 +192,8 @@ const LandingPage = () => {
       </section>
 
       {/* Interactive Scenarios Section */}
-      <section className="py-20">
-        <div className="container mx-auto">
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl lg:text-4xl font-bold text-center mb-6 animate-fadeIn">
             How Can We Help You Today?
           </h2>
@@ -250,9 +249,9 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features Section with Animation */}
-      <section className="py-20 bg-gradient-to-b from-primary/5 to-white">
-        <div className="container mx-auto">
+      {/* Features Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl lg:text-4xl font-bold text-center mb-16 animate-fadeIn">
             Why Lagos Trusts Peekop
           </h2>
@@ -280,8 +279,8 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/10 via-white to-primary/5">
-        <div className="container mx-auto text-center">
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl lg:text-4xl font-bold mb-6 animate-fadeIn">
             Ready to Experience Better Deliveries?
           </h2>

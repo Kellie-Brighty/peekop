@@ -215,7 +215,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col relative overflow-hidden w-screen">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col relative w-screen overflow-hidden">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 pointer-events-none">
         {floatingElements.map((element, index) => (
@@ -230,19 +230,39 @@ const SignUp = () => {
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm z-20">
-        <div className="container mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link
             to="/"
             className="text-xl font-bold text-primary hover:text-primary/90 transition-colors"
           >
             Peekop
           </Link>
+          <nav className="hidden md:flex items-center gap-6">
+            <Link
+              to="/"
+              className="text-gray-600 hover:text-primary transition-colors"
+            >
+              Home
+            </Link>
+            <Link
+              to="/about"
+              className="text-gray-600 hover:text-primary transition-colors"
+            >
+              About
+            </Link>
+            <Link
+              to="/contact"
+              className="text-gray-600 hover:text-primary transition-colors"
+            >
+              Contact
+            </Link>
+          </nav>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-start md:items-center justify-center pt-20 md:pt-0 z-10">
-        <div className="w-full md:max-w-md px-4 md:px-6">
+      <main className="flex-1 flex items-center justify-center w-full max-w-7xl mx-auto px-4 pt-20 md:pt-0">
+        <div className="w-full max-w-md">
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -273,7 +293,7 @@ const SignUp = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
-              className="space-y-6 bg-white/50 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100"
+              className="space-y-6 bg-white/50 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-100"
             >
               {/* Title */}
               <motion.h1
@@ -348,7 +368,7 @@ const SignUp = () => {
             </motion.div>
           </AnimatePresence>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
