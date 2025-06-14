@@ -391,6 +391,29 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Footer with Admin Access */}
+      <footer className="py-8 bg-white border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center">
+            <div className="text-gray-500 text-sm mb-4 sm:mb-0">
+              © 2024 Peekop. All rights reserved.
+            </div>
+            <div className="flex items-center space-x-6">
+              <Link
+                to="/admin/login"
+                className="text-xs text-gray-400 hover:text-primary transition-colors"
+              >
+                Admin Portal
+              </Link>
+              <div className="text-gray-300">|</div>
+              <span className="text-xs text-gray-400">
+                Made with ❤️ in Lagos
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

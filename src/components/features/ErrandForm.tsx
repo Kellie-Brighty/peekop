@@ -545,10 +545,11 @@ const ErrandForm = ({
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+      style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
     >
       <motion.div
-        className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl"
+        className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl my-4 min-h-fit"
         initial={{ y: 20 }}
         animate={{ y: 0 }}
       >
