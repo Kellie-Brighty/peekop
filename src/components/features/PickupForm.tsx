@@ -2,104 +2,124 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiX,
-  FiPackage,
   FiMapPin,
-  FiDollarSign,
+  FiNavigation2,
   FiClock,
+  FiDollarSign,
   FiCheck,
+  FiUser,
   FiUsers,
 } from "react-icons/fi";
-import { Location, Rider } from "../../types";
+import { RiMotorbikeFill } from "react-icons/ri";
+import { Rider, Location } from "../../types";
 
-interface ErrandFormProps {
+interface PickupFormProps {
   userLocation: Location;
   selectedRider: Rider | null;
   orderType: "marketplace" | "direct";
   onClose: () => void;
-  onCreateErrand: (errandDetails: ErrandDetails) => void;
+  onCreatePickup: (pickupDetails: PickupDetails) => void;
 }
 
-export interface ErrandDetails {
+export interface PickupDetails {
   pickupLocation: Location;
   pickupAddress: string;
-  dropoffLocation: Location;
-  dropoffAddress: string;
-  itemDescription: string;
-  packageSize: "small" | "medium" | "large";
-  isFragile: boolean;
+  destination: Location;
+  destinationAddress: string;
+  passengerCount: number;
   urgency: "normal" | "express";
   estimatedPrice: number;
   estimatedDuration: number;
   riderId: number | null;
   notes: string;
+  specialRequests: {
+    waitingTime: boolean;
+    helpWithLuggage: boolean;
+    childSeat: boolean;
+    wheelchairAccessible: boolean;
+  };
 }
 
-const ErrandForm = ({
+const PickupForm = ({
   userLocation,
   selectedRider,
   orderType,
   onClose,
-  onCreateErrand,
-}: ErrandFormProps) => {
+  onCreatePickup,
+}: PickupFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const [errandDetails, setErrandDetails] = useState<ErrandDetails>({
+  const [pickupDetails, setPickupDetails] = useState<PickupDetails>({
     pickupLocation: userLocation,
     pickupAddress: "Current Location",
-    dropoffLocation: {
+    destination: {
       lat: userLocation.lat + 0.01,
       lng: userLocation.lng + 0.01,
     },
-    dropoffAddress: "",
-    itemDescription: "",
-    packageSize: "small",
-    isFragile: false,
+    destinationAddress: "",
+    passengerCount: 1,
     urgency: "normal",
     estimatedPrice: 0,
     estimatedDuration: 0,
     riderId: selectedRider?.id || null,
     notes: "",
+    specialRequests: {
+      waitingTime: false,
+      helpWithLuggage: false,
+      childSeat: false,
+      wheelchairAccessible: false,
+    },
   });
 
   useEffect(() => {
-    // Calculate price and duration whenever relevant fields change
     calculatePriceAndDuration();
   }, [
-    errandDetails.pickupLocation,
-    errandDetails.dropoffLocation,
-    errandDetails.packageSize,
-    errandDetails.urgency,
+    pickupDetails.pickupLocation,
+    pickupDetails.destination,
+    pickupDetails.passengerCount,
+    pickupDetails.urgency,
+    pickupDetails.specialRequests,
   ]);
 
   const calculatePriceAndDuration = () => {
     // Calculate distance
     const distance =
       Math.sqrt(
-        Math.pow(errandDetails.dropoffLocation.lat - userLocation.lat, 2) +
-          Math.pow(errandDetails.dropoffLocation.lng - userLocation.lng, 2)
+        Math.pow(
+          pickupDetails.destination.lat - pickupDetails.pickupLocation.lat,
+          2
+        ) +
+          Math.pow(
+            pickupDetails.destination.lng - pickupDetails.pickupLocation.lng,
+            2
+          )
       ) * 111; // Convert to kilometers roughly
 
     // Calculate duration in minutes
-    const duration = distance * 5; // Assume 5 minutes per kilometer
+    const duration = distance * 3; // Assume 3 minutes per kilometer for pickup
 
     // Base price in Naira
-    let price = 500 + distance * 200;
+    let price = 300 + distance * 150;
 
-    // Add package size cost
-    if (errandDetails.packageSize === "medium") price += 300;
-    if (errandDetails.packageSize === "large") price += 700;
+    // Add passenger count cost
+    if (pickupDetails.passengerCount > 1) {
+      price += (pickupDetails.passengerCount - 1) * 100;
+    }
 
     // Add urgency cost
-    if (errandDetails.urgency === "express") price *= 1.5;
+    if (pickupDetails.urgency === "express") price *= 1.3;
 
-    // Add fragility cost
-    if (errandDetails.isFragile) price += 500;
+    // Add special requests cost
+    const specialRequestsCount = Object.values(
+      pickupDetails.specialRequests
+    ).filter(Boolean).length;
+    price += specialRequestsCount * 200;
 
     // Update state
-    setErrandDetails({
-      ...errandDetails,
+    setPickupDetails({
+      ...pickupDetails,
       estimatedDuration: Math.ceil(duration),
       estimatedPrice: Math.round(price),
     });
@@ -114,13 +134,24 @@ const ErrandForm = ({
 
     if (type === "checkbox") {
       const checkbox = e.target as HTMLInputElement;
-      setErrandDetails({
-        ...errandDetails,
-        [name]: checkbox.checked,
-      });
+      if (name.startsWith("specialRequests.")) {
+        const requestName = name.split(".")[1];
+        setPickupDetails({
+          ...pickupDetails,
+          specialRequests: {
+            ...pickupDetails.specialRequests,
+            [requestName]: checkbox.checked,
+          },
+        });
+      } else {
+        setPickupDetails({
+          ...pickupDetails,
+          [name]: checkbox.checked,
+        });
+      }
     } else {
-      setErrandDetails({
-        ...errandDetails,
+      setPickupDetails({
+        ...pickupDetails,
         [name]: value,
       });
     }
@@ -138,7 +169,7 @@ const ErrandForm = ({
   };
 
   const handleConfirm = () => {
-    onCreateErrand(errandDetails);
+    onCreatePickup(pickupDetails);
   };
 
   const handleNext = () => {
@@ -196,11 +227,11 @@ const ErrandForm = ({
   // Step 1: Location Details
   const renderLocationStep = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold mb-4">Location Details</h3>
+      <h3 className="text-lg font-semibold mb-4">Trip Details</h3>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Pickup Address
+          Pickup Location
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -209,7 +240,7 @@ const ErrandForm = ({
           <input
             type="text"
             name="pickupAddress"
-            value={errandDetails.pickupAddress}
+            value={pickupDetails.pickupAddress}
             onChange={handleChange}
             className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
             placeholder="Pickup location"
@@ -219,242 +250,226 @@ const ErrandForm = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Dropoff Address
+          Destination
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FiMapPin className="text-gray-400" />
+            <FiNavigation2 className="text-gray-400" />
           </div>
           <input
             type="text"
-            name="dropoffAddress"
-            value={errandDetails.dropoffAddress}
+            name="destinationAddress"
+            value={pickupDetails.destinationAddress}
             onChange={handleChange}
             className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-            placeholder="Dropoff location"
+            placeholder="Where are you going?"
             required
           />
         </div>
       </div>
 
-      <div className="pt-4">
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={!errandDetails.dropoffAddress.trim()}
-          className={`w-full py-3 px-6 bg-primary text-white rounded-xl font-medium transition-colors ${
-            !errandDetails.dropoffAddress.trim()
-              ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-primary/90"
-          }`}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Number of Passengers
+        </label>
+        <select
+          name="passengerCount"
+          value={pickupDetails.passengerCount}
+          onChange={handleChange}
+          className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
         >
-          Next
-        </button>
+          <option value={1}>1 Passenger</option>
+          <option value={2}>2 Passengers</option>
+          <option value={3}>3 Passengers</option>
+          <option value={4}>4 Passengers</option>
+        </select>
       </div>
     </div>
   );
 
-  // Step 2: Package Details
-  const renderPackageStep = () => (
+  // Step 2: Trip Preferences
+  const renderPreferencesStep = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold mb-4">Package Details</h3>
+      <h3 className="text-lg font-semibold mb-4">Trip Preferences</h3>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Item Description
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Trip Priority
         </label>
-        <textarea
-          name="itemDescription"
-          value={errandDetails.itemDescription}
-          onChange={handleChange}
-          className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-          placeholder="Describe the item(s) to be delivered"
-          rows={3}
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Package Size
-        </label>
-        <select
-          name="packageSize"
-          value={errandDetails.packageSize}
-          onChange={handleChange}
-          className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
-        >
-          <option value="small">Small (fits in a bag)</option>
-          <option value="medium">Medium (fits on a bike rack)</option>
-          <option value="large">Large (needs tricycle)</option>
-        </select>
-      </div>
-
-      <div className="flex items-center">
-        <input
-          type="checkbox"
-          name="isFragile"
-          id="isFragile"
-          checked={errandDetails.isFragile}
-          onChange={handleChange}
-          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-        />
-        <label htmlFor="isFragile" className="ml-2 block text-sm text-gray-700">
-          This package is fragile and requires special handling
-        </label>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Delivery Priority
-        </label>
-        <div className="flex space-x-4">
-          <label
-            className={`flex-1 border rounded-lg p-3 flex items-center cursor-pointer ${
-              errandDetails.urgency === "normal"
-                ? "border-primary bg-primary/5"
-                : "border-gray-200"
-            }`}
-          >
+        <div className="space-y-3">
+          <label className="flex items-center">
             <input
               type="radio"
               name="urgency"
               value="normal"
-              checked={errandDetails.urgency === "normal"}
+              checked={pickupDetails.urgency === "normal"}
               onChange={handleChange}
-              className="sr-only"
+              className="mr-3"
             />
-            <span className="ml-2 flex-1">
-              <span className="block font-medium">Standard</span>
-              <span className="block text-xs text-gray-500">
-                Regular delivery time
-              </span>
-            </span>
+            <div>
+              <div className="font-medium">Standard</div>
+              <div className="text-sm text-gray-500">Regular pickup time</div>
+            </div>
           </label>
-
-          <label
-            className={`flex-1 border rounded-lg p-3 flex items-center cursor-pointer ${
-              errandDetails.urgency === "express"
-                ? "border-primary bg-primary/5"
-                : "border-gray-200"
-            }`}
-          >
+          <label className="flex items-center">
             <input
               type="radio"
               name="urgency"
               value="express"
-              checked={errandDetails.urgency === "express"}
+              checked={pickupDetails.urgency === "express"}
               onChange={handleChange}
-              className="sr-only"
+              className="mr-3"
             />
-            <span className="ml-2 flex-1">
-              <span className="block font-medium">Express</span>
-              <span className="block text-xs text-gray-500">
-                Faster delivery (1.5x price)
-              </span>
-            </span>
+            <div>
+              <div className="font-medium">Express (+30% fee)</div>
+              <div className="text-sm text-gray-500">Priority pickup</div>
+            </div>
           </label>
         </div>
       </div>
 
-      <div className="flex space-x-4 pt-4">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="flex-1 py-3 px-6 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-        >
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={!errandDetails.itemDescription.trim()}
-          className={`flex-1 py-3 px-6 bg-primary text-white rounded-xl font-medium transition-colors ${
-            !errandDetails.itemDescription.trim()
-              ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-primary/90"
-          }`}
-        >
-          Next
-        </button>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Special Requests
+        </label>
+        <div className="space-y-3">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="specialRequests.waitingTime"
+              checked={pickupDetails.specialRequests.waitingTime}
+              onChange={handleChange}
+              className="mr-3"
+            />
+            <div>
+              <div className="font-medium">Wait for me (+₦200)</div>
+              <div className="text-sm text-gray-500">
+                Driver will wait up to 5 minutes
+              </div>
+            </div>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="specialRequests.helpWithLuggage"
+              checked={pickupDetails.specialRequests.helpWithLuggage}
+              onChange={handleChange}
+              className="mr-3"
+            />
+            <div>
+              <div className="font-medium">Help with luggage (+₦200)</div>
+              <div className="text-sm text-gray-500">
+                Driver will assist with bags
+              </div>
+            </div>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="specialRequests.childSeat"
+              checked={pickupDetails.specialRequests.childSeat}
+              onChange={handleChange}
+              className="mr-3"
+            />
+            <div>
+              <div className="font-medium">Child seat required (+₦200)</div>
+              <div className="text-sm text-gray-500">
+                Vehicle with child safety seat
+              </div>
+            </div>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="specialRequests.wheelchairAccessible"
+              checked={pickupDetails.specialRequests.wheelchairAccessible}
+              onChange={handleChange}
+              className="mr-3"
+            />
+            <div>
+              <div className="font-medium">Wheelchair accessible (+₦200)</div>
+              <div className="text-sm text-gray-500">
+                Vehicle suitable for wheelchair users
+              </div>
+            </div>
+          </label>
+        </div>
       </div>
     </div>
   );
 
-  // Step 3: Confirmation
   const renderRiderOrMarketplace = () => {
     if (orderType === "direct" && selectedRider) {
       return (
-        <div className="bg-green-50 p-4 rounded-lg mb-6">
+        <div className="bg-green-50 p-4 rounded-lg mb-4">
           <div className="flex items-center">
             <img
               src={selectedRider.photo}
               alt={selectedRider.name}
-              className="w-12 h-12 rounded-full mr-4"
+              className="w-12 h-12 rounded-full mr-3"
             />
             <div>
               <h4 className="font-medium">{selectedRider.name}</h4>
-              <div className="text-sm text-gray-600">
-                {selectedRider.vehicleType === "bike" ? "Bike" : "Tricycle"} •{" "}
-                {selectedRider.rating.toFixed(1)} ★
+              <div className="flex items-center text-sm text-gray-600">
+                <RiMotorbikeFill className="mr-1" />
+                <span className="capitalize">{selectedRider.vehicleType}</span>
+                <span className="mx-2">•</span>
+                <span>{selectedRider.eta} mins away</span>
               </div>
             </div>
           </div>
         </div>
       );
-    } else {
-      return (
-        <div className="bg-blue-50 p-4 rounded-lg mb-6">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-              <FiUsers className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h4 className="font-medium">Marketplace Order</h4>
-              <p className="text-sm text-gray-600">
-                Your errand will be visible to all nearby riders
-              </p>
-            </div>
+    }
+
+    return (
+      <div className="bg-blue-50 p-4 rounded-lg mb-4">
+        <div className="flex items-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+            <FiUsers className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-medium">Marketplace Order</h4>
+            <p className="text-sm text-gray-600">
+              Available to all nearby riders
+            </p>
           </div>
         </div>
-      );
-    }
+      </div>
+    );
   };
 
+  // Step 3: Confirmation
   const renderConfirmationStep = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold mb-4">Confirm Your Errand</h3>
+      <h3 className="text-lg font-semibold mb-4">Confirm Your Trip</h3>
 
       {renderRiderOrMarketplace()}
 
-      <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+      <div className="bg-gray-50 p-4 rounded-lg space-y-3">
         <div className="flex">
           <FiMapPin className="text-primary mt-1 mr-3 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-gray-500">Pickup</p>
-            <p className="text-gray-800">{errandDetails.pickupAddress}</p>
+            <p className="text-sm font-medium text-gray-500">From</p>
+            <p className="text-gray-800">{pickupDetails.pickupAddress}</p>
           </div>
         </div>
 
         <div className="flex">
-          <FiMapPin className="text-red-500 mt-1 mr-3 flex-shrink-0" />
+          <FiNavigation2 className="text-primary mt-1 mr-3 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-gray-500">Dropoff</p>
-            <p className="text-gray-800">{errandDetails.dropoffAddress}</p>
+            <p className="text-sm font-medium text-gray-500">To</p>
+            <p className="text-gray-800">{pickupDetails.destinationAddress}</p>
           </div>
         </div>
 
         <div className="flex">
-          <FiPackage className="text-primary mt-1 mr-3 flex-shrink-0" />
+          <FiUser className="text-primary mt-1 mr-3 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-gray-500">Package</p>
+            <p className="text-sm font-medium text-gray-500">Passengers</p>
             <p className="text-gray-800">
-              {errandDetails.packageSize.charAt(0).toUpperCase() +
-                errandDetails.packageSize.slice(1)}
-              {errandDetails.isFragile ? " (Fragile)" : ""}
-            </p>
-            <p className="text-gray-600 text-sm">
-              {errandDetails.itemDescription}
+              {pickupDetails.passengerCount} passenger
+              {pickupDetails.passengerCount > 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -464,8 +479,8 @@ const ErrandForm = ({
           <div>
             <p className="text-sm font-medium text-gray-500">Estimated Time</p>
             <p className="text-gray-800">
-              {errandDetails.urgency === "express" ? "Express: " : ""}
-              {errandDetails.estimatedDuration} mins
+              {pickupDetails.urgency === "express" ? "Express: " : ""}
+              {pickupDetails.estimatedDuration} mins
             </p>
           </div>
         </div>
@@ -473,13 +488,33 @@ const ErrandForm = ({
         <div className="flex">
           <FiDollarSign className="text-primary mt-1 mr-3 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-gray-500">Price</p>
+            <p className="text-sm font-medium text-gray-500">Estimated Fare</p>
             <p className="text-gray-800 font-medium">
-              ₦{errandDetails.estimatedPrice.toFixed(2)}
+              ₦{pickupDetails.estimatedPrice.toFixed(2)}
             </p>
           </div>
         </div>
       </div>
+
+      {Object.values(pickupDetails.specialRequests).some(Boolean) && (
+        <div className="bg-yellow-50 p-4 rounded-lg">
+          <h4 className="font-medium text-yellow-800 mb-2">Special Requests</h4>
+          <ul className="text-sm text-yellow-700 space-y-1">
+            {pickupDetails.specialRequests.waitingTime && (
+              <li>• Driver will wait</li>
+            )}
+            {pickupDetails.specialRequests.helpWithLuggage && (
+              <li>• Help with luggage</li>
+            )}
+            {pickupDetails.specialRequests.childSeat && (
+              <li>• Child seat required</li>
+            )}
+            {pickupDetails.specialRequests.wheelchairAccessible && (
+              <li>• Wheelchair accessible</li>
+            )}
+          </ul>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -487,55 +522,12 @@ const ErrandForm = ({
         </label>
         <textarea
           name="notes"
-          value={errandDetails.notes}
+          value={pickupDetails.notes}
           onChange={handleChange}
           className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary focus:border-primary"
           placeholder="Any special instructions for the rider"
           rows={2}
         />
-      </div>
-
-      <div className="flex space-x-4 pt-4">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="flex-1 py-3 px-6 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-        >
-          Back
-        </button>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="flex-1 py-3 px-6 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors flex items-center justify-center"
-        >
-          {isLoading ? (
-            <>
-              <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Processing...
-            </>
-          ) : (
-            "Create Errand"
-          )}
-        </button>
       </div>
     </div>
   );
@@ -558,10 +550,10 @@ const ErrandForm = ({
             <FiCheck className="w-10 h-10 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-secondary mb-2">
-            Errand Created!
+            Pickup Requested!
           </h2>
           <p className="text-gray-medium">
-            Your errand request has been created successfully. A rider will be
+            Your pickup request has been created successfully. A rider will be
             assigned shortly.
           </p>
         </div>
@@ -575,11 +567,10 @@ const ErrandForm = ({
     </motion.div>
   );
 
-  // Add a function to get submit button text based on order type
   const getSubmitButtonText = () => {
     if (isLoading) return "Processing...";
     if (currentStep < 3) return "Next";
-    return orderType === "direct" ? "Create Errand" : "Submit to Marketplace";
+    return orderType === "direct" ? "Request Pickup" : "Submit to Marketplace";
   };
 
   return (
@@ -592,10 +583,10 @@ const ErrandForm = ({
       <div className="p-4 border-b flex items-center justify-between">
         <h2 className="text-xl font-bold text-secondary">
           {currentStep === 1
-            ? "New Errand"
+            ? "New Pickup"
             : currentStep === 2
-            ? "Package Details"
-            : "Confirm Errand"}
+            ? "Trip Preferences"
+            : "Confirm Pickup"}
         </h2>
         <button
           onClick={onClose}
@@ -610,7 +601,7 @@ const ErrandForm = ({
           {renderStepIndicator()}
 
           {currentStep === 1 && renderLocationStep()}
-          {currentStep === 2 && renderPackageStep()}
+          {currentStep === 2 && renderPreferencesStep()}
           {currentStep === 3 && renderConfirmationStep()}
 
           <div className="flex justify-between mt-8">
@@ -629,9 +620,15 @@ const ErrandForm = ({
             <button
               type="button"
               onClick={currentStep < 3 ? handleNext : handleSubmit}
-              disabled={isLoading}
+              disabled={
+                isLoading ||
+                (currentStep === 1 && !pickupDetails.destinationAddress)
+              }
               className={`px-6 py-2 ${
-                isLoading ? "bg-gray-400" : "bg-primary"
+                isLoading ||
+                (currentStep === 1 && !pickupDetails.destinationAddress)
+                  ? "bg-gray-400"
+                  : "bg-primary"
               } text-white rounded-lg flex items-center space-x-2`}
             >
               <span>{getSubmitButtonText()}</span>
@@ -652,4 +649,4 @@ const ErrandForm = ({
   );
 };
 
-export default ErrandForm;
+export default PickupForm;

@@ -25,6 +25,9 @@ import { useNavigate } from "react-router-dom";
 import RiderCard from "../../components/features/RiderCard";
 import UserProfile from "../../components/features/UserProfile";
 import HollerModal from "../../components/features/HollerModal";
+import PickupForm, {
+  PickupDetails,
+} from "../../components/features/PickupForm";
 import ErrandForm, {
   ErrandDetails,
 } from "../../components/features/ErrandForm";
@@ -59,6 +62,7 @@ interface MarketplaceOrder {
   pickupLocation: Location | null;
   destination?: Location | null;
   details?: ErrandDetails;
+  pickupDetails?: PickupDetails;
   bids: Bid[];
 }
 
@@ -78,6 +82,7 @@ const Dashboard = () => {
   const [riderArriving, setRiderArriving] = useState(false);
   const [serviceMode, setServiceMode] = useState<ServiceMode>("pickup");
   const [showErrandForm, setShowErrandForm] = useState(false);
+  const [showPickupForm, setShowPickupForm] = useState(false);
   const bottomSheetControls = useAnimation();
   const mapRef = useRef(null);
   const [showRiderProfile, setShowRiderProfile] = useState(false);
@@ -260,11 +265,26 @@ const Dashboard = () => {
       return {
         id: i + 1,
         name: names[i % names.length],
+        email: `${names[i % names.length]
+          .toLowerCase()
+          .replace(" ", ".")}@peekop.com`,
+        phone: `+234 ${Math.floor(Math.random() * 900) + 100} ${
+          Math.floor(Math.random() * 900) + 100
+        } ${Math.floor(Math.random() * 9000) + 1000}`,
         photo: `https://randomuser.me/api/portraits/${
           i % 2 ? "men" : "women"
         }/${(i % 12) + 1}.jpg`,
         rating: rating,
         vehicleType: vehicleType,
+        vehicleNumber: `${String.fromCharCode(
+          65 + Math.floor(Math.random() * 26)
+        )}${String.fromCharCode(
+          65 + Math.floor(Math.random() * 26)
+        )}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}-${
+          Math.floor(Math.random() * 900) + 100
+        }-${String.fromCharCode(
+          65 + Math.floor(Math.random() * 26)
+        )}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
         eta: eta,
         distance:
           distanceKm < 1
@@ -437,6 +457,70 @@ const Dashboard = () => {
     }
   };
 
+  const handleCreatePickup = (pickupDetails: PickupDetails) => {
+    // Simulate pickup creation
+    setShowPickupForm(false);
+
+    // Create order details
+    const orderDetails: MarketplaceOrder = {
+      id: Math.floor(Math.random() * 1000) + 1,
+      type: "pickup",
+      status: orderType === "direct" ? "accepted" : "bidding",
+      createdAt: new Date().toISOString(),
+      rider: selectedRider ?? undefined,
+      user: user,
+      pickupLocation: pickupDetails.pickupLocation,
+      destination: pickupDetails.destination,
+      pickupDetails: pickupDetails,
+      bids: [],
+    };
+
+    if (orderType === "direct") {
+      // Direct order to specific rider
+      setTimeout(() => {
+        setRiderArriving(true);
+        setCurrentChatRider(selectedRider);
+        setShowChatSession(true);
+
+        // After some time, set ride in progress
+        setTimeout(() => {
+          setRiderArriving(false);
+          setRideInProgress(true);
+
+          // Mock pickup completion
+          setTimeout(() => {
+            setRideInProgress(false);
+
+            // Update user points
+            if (user) {
+              const updatedUser = {
+                ...user,
+                points: (user.points || 0) + 25, // Points for pickup
+                completedRides: (user.completedRides || 0) + 1,
+              };
+              setUser(updatedUser);
+              localStorage.setItem("user", JSON.stringify(updatedUser));
+            }
+          }, 12000);
+        }, 3000);
+      }, 5000);
+
+      // Add to active orders
+      setActiveOrders([...activeOrders, orderDetails]);
+    } else {
+      // Marketplace order with bidding
+      alert(
+        `Your pickup request has been added to the marketplace. Riders will now be able to place bids.`
+      );
+
+      // Add to pending orders
+      setPendingOrders([...pendingOrders, orderDetails]);
+
+      // Simulate riders placing bids
+      simulateRiderBids(orderDetails.id);
+    }
+  };
+
   // Add method to simulate rider bids
   const simulateRiderBids = (orderId: number) => {
     // Generate 2-5 random bids over the course of 15 seconds
@@ -588,9 +672,10 @@ const Dashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+        style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
       >
-        <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full">
+        <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full my-4 min-h-fit">
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-xl font-bold text-secondary">Rider Bids</h3>
             <button
@@ -622,7 +707,7 @@ const Dashboard = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto">
               {selectedOrder.bids
                 .sort((a, b) => a.amount - b.amount) // Sort by lowest price first
                 .map((bid) => (
@@ -694,9 +779,10 @@ const Dashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+        style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
       >
-        <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full">
+        <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full my-4 min-h-fit">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiCheck className="w-8 h-8 text-primary" />
@@ -839,9 +925,10 @@ const Dashboard = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+      style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
     >
-      <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full">
+      <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full my-4 min-h-fit">
         <h3 className="text-xl font-bold text-secondary mb-4">Create Order</h3>
         <p className="text-gray-600 mb-6">
           Choose how you want to place your {serviceMode} order:
@@ -853,7 +940,7 @@ const Dashboard = () => {
               setOrderType("marketplace");
               setShowOrderTypeModal(false);
               if (serviceMode === "pickup") {
-                setShowHollerOptions(true);
+                setShowPickupForm(true);
               } else {
                 setShowErrandForm(true);
               }
@@ -1348,9 +1435,10 @@ const Dashboard = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+            style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
           >
-            <div className="w-full max-w-md mx-auto">
+            <div className="w-full max-w-md mx-auto my-4">
               <UserProfile
                 user={user}
                 onClose={() => setShowUserProfile(false)}
@@ -1367,7 +1455,8 @@ const Dashboard = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+            style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
           >
             <motion.div
               initial={{ y: 20 }}
@@ -1597,13 +1686,20 @@ const Dashboard = () => {
                   <AnimatePresence>
                     {showHollerOptions &&
                       (orderType === "direct" ? selectedRider : true) && (
-                        <div className="absolute inset-x-2 sm:inset-x-4 bottom-[30%] sm:bottom-[35%] z-20">
-                          <HollerModal
-                            rider={selectedRider ?? undefined}
-                            orderType={orderType}
-                            onClose={() => setShowHollerOptions(false)}
-                            onHoller={handleHoller}
-                          />
+                        <div
+                          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                          style={{
+                            paddingTop: "max(1rem, env(safe-area-inset-top))",
+                          }}
+                        >
+                          <div className="w-full max-w-md mx-auto my-4">
+                            <HollerModal
+                              rider={selectedRider ?? undefined}
+                              orderType={orderType}
+                              onClose={() => setShowHollerOptions(false)}
+                              onHoller={handleHoller}
+                            />
+                          </div>
                         </div>
                       )}
                   </AnimatePresence>
@@ -1614,14 +1710,46 @@ const Dashboard = () => {
                       (orderType === "direct"
                         ? selectedRider && userLocation
                         : userLocation) && (
-                        <div className="absolute inset-x-2 sm:inset-x-4 bottom-[10%] top-[10%] sm:bottom-[5%] sm:top-[5%] z-20 overflow-auto">
-                          <ErrandForm
-                            userLocation={userLocation}
-                            selectedRider={selectedRider}
-                            orderType={orderType}
-                            onClose={() => setShowErrandForm(false)}
-                            onCreateErrand={handleCreateErrand}
-                          />
+                        <div
+                          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                          style={{
+                            paddingTop: "max(1rem, env(safe-area-inset-top))",
+                          }}
+                        >
+                          <div className="w-full max-w-md mx-auto my-4">
+                            <ErrandForm
+                              userLocation={userLocation}
+                              selectedRider={selectedRider}
+                              orderType={orderType}
+                              onClose={() => setShowErrandForm(false)}
+                              onCreateErrand={handleCreateErrand}
+                            />
+                          </div>
+                        </div>
+                      )}
+                  </AnimatePresence>
+
+                  {/* Pickup Form */}
+                  <AnimatePresence>
+                    {showPickupForm &&
+                      (orderType === "direct"
+                        ? selectedRider && userLocation
+                        : userLocation) && (
+                        <div
+                          className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                          style={{
+                            paddingTop: "max(1rem, env(safe-area-inset-top))",
+                          }}
+                        >
+                          <div className="w-full max-w-md mx-auto my-4">
+                            <PickupForm
+                              userLocation={userLocation}
+                              selectedRider={selectedRider}
+                              orderType={orderType}
+                              onClose={() => setShowPickupForm(false)}
+                              onCreatePickup={handleCreatePickup}
+                            />
+                          </div>
                         </div>
                       )}
                   </AnimatePresence>
@@ -1629,22 +1757,33 @@ const Dashboard = () => {
                   {/* Rider Profile Modal */}
                   <AnimatePresence>
                     {showRiderProfile && selectedRider && (
-                      <div className="absolute inset-x-2 sm:inset-x-4 bottom-[10%] top-[10%] sm:bottom-[5%] sm:top-[5%] z-20 overflow-auto flex items-center justify-center">
-                        <RiderProfile
-                          rider={selectedRider}
-                          isFavorite={isRiderFavorite(selectedRider.id)}
-                          onClose={() => setShowRiderProfile(false)}
-                          onHoller={() => {
-                            setShowRiderProfile(false);
-                            setShowHollerOptions(true);
-                          }}
-                          onCreateErrand={() => {
-                            setShowRiderProfile(false);
-                            setShowErrandForm(true);
-                          }}
-                          onToggleFavorite={toggleFavoriteRider}
-                          serviceMode={serviceMode}
-                        />
+                      <div
+                        className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                        style={{
+                          paddingTop: "max(1rem, env(safe-area-inset-top))",
+                        }}
+                      >
+                        <div className="w-full max-w-md mx-auto my-4">
+                          <RiderProfile
+                            rider={selectedRider}
+                            isFavorite={isRiderFavorite(selectedRider.id)}
+                            onClose={() => setShowRiderProfile(false)}
+                            onHoller={() => {
+                              setShowRiderProfile(false);
+                              if (serviceMode === "pickup") {
+                                setShowPickupForm(true);
+                              } else {
+                                setShowHollerOptions(true);
+                              }
+                            }}
+                            onCreateErrand={() => {
+                              setShowRiderProfile(false);
+                              setShowErrandForm(true);
+                            }}
+                            onToggleFavorite={toggleFavoriteRider}
+                            serviceMode={serviceMode}
+                          />
+                        </div>
                       </div>
                     )}
                   </AnimatePresence>
@@ -1878,6 +2017,7 @@ const Dashboard = () => {
       {activeTab === "home" &&
         !showHollerOptions &&
         !showErrandForm &&
+        !showPickupForm &&
         !rideInProgress && (
           <motion.button
             initial={{ scale: 0 }}

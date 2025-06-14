@@ -1060,9 +1060,10 @@ const RiderDashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+        style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
       >
-        <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+        <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md my-4 min-h-fit">
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-xl font-bold text-secondary">Place Your Bid</h3>
             <button
