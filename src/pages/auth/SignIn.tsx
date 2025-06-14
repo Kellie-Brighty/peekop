@@ -217,7 +217,6 @@ const SignIn = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
-  const [accountType, setAccountType] = useState<"user" | "rider">("user");
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
@@ -291,7 +290,6 @@ const SignIn = () => {
       password: account.password,
     });
     setLoginMethod("email");
-    setAccountType(account.role);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -362,45 +360,24 @@ const SignIn = () => {
         setIsLoading(false);
         navigate("/rider-dashboard");
       } else {
-        // Generic user login if credentials don't match any demo account
-        localStorage.setItem("accountType", accountType);
-        if (accountType === "user") {
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              id: 999,
-              fullName: "Generic User",
-              email: formData.email || "user@example.com",
-              phone: formData.phone || "+1234567890",
-              verified: true,
-              points: 125,
-              tier: "Bronze",
-              favorites: [],
-              completedRides: 0,
-            })
-          );
-          setIsLoading(false);
-          navigate("/dashboard");
-        } else {
-          localStorage.setItem(
-            "rider",
-            JSON.stringify({
-              id: 999,
-              fullName: "Generic Rider",
-              email: formData.email || "rider@example.com",
-              phone: formData.phone || "+1234567890",
-              verified: true,
-              rating: 4.5,
-              vehicleType: "bike",
-              completedRides: 0,
-              isOnline: true,
-              earnings: 0,
-              joinedDate: new Date().toISOString().split("T")[0],
-            })
-          );
-          setIsLoading(false);
-          navigate("/rider-dashboard");
-        }
+        // For unknown credentials, default to user account
+        localStorage.setItem("accountType", "user");
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            id: 999,
+            fullName: "User",
+            email: formData.email || "user@example.com",
+            phone: formData.phone || "+1234567890",
+            verified: true,
+            points: 125,
+            tier: "Bronze",
+            favorites: [],
+            completedRides: 0,
+          })
+        );
+        setIsLoading(false);
+        navigate("/dashboard");
       }
     }, 1500);
   };
@@ -464,28 +441,6 @@ const SignIn = () => {
               Welcome back!
             </h2>
             <p className="text-gray-medium">Sign in to continue using Peekop</p>
-          </div>
-
-          {/* Account Type Selector */}
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-            <button
-              className={`flex-1 py-2 px-1 rounded-md transition-colors flex items-center justify-center ${
-                accountType === "user" ? "bg-white shadow-sm" : ""
-              }`}
-              onClick={() => setAccountType("user")}
-            >
-              <FiUser className="mr-1" />
-              <span className="text-sm">User Account</span>
-            </button>
-            <button
-              className={`flex-1 py-2 px-1 rounded-md transition-colors flex items-center justify-center ${
-                accountType === "rider" ? "bg-white shadow-sm" : ""
-              }`}
-              onClick={() => setAccountType("rider")}
-            >
-              <RiMotorbikeFill className="mr-1" />
-              <span className="text-sm">Rider Account</span>
-            </button>
           </div>
 
           <div className="flex mb-6 bg-gray-100 rounded-lg p-1">

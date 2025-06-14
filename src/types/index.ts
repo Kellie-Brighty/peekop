@@ -18,9 +18,12 @@ export interface User {
 export interface Rider {
   id: number;
   name: string;
+  email: string;
+  phone: string;
   photo: string;
   rating: number;
   vehicleType: "bike" | "tricycle";
+  vehicleNumber: string;
   eta: number;
   distance: string;
   location: Location;
